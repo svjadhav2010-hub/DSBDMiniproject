@@ -1,26 +1,31 @@
 import { useState } from 'react';
 import axios from 'axios';
 
-const SEG_INFO = {
-  Champions: { icon: '👑', color: '#6366f1', bg: '#1e1e3f', border: '#312e81',
-    desc: 'Your best customers. They buy often, spend the most, and bought recently. Reward them with exclusive perks and early access.',
-    actions: ['Send loyalty rewards', 'Offer early product access', 'Ask for reviews / referrals'] },
-  Loyal:     { icon: '💚', color: '#22c55e', bg: '#052e16', border: '#14532d',
-    desc: 'Regular buyers with solid frequency and spend. Great candidates for upselling and membership programs.',
-    actions: ['Upsell to premium tier', 'Enrol in membership', 'Send personalised offers'] },
-  'At-Risk': { icon: '⚠️', color: '#f59e0b', bg: '#1c1107', border: '#78350f',
-    desc: 'Were good customers but have not purchased recently. Act now before they are lost.',
-    actions: ['Send win-back email', 'Offer limited-time discount', 'Ask what went wrong'] },
-  Lost:      { icon: '💔', color: '#ef4444', bg: '#1f0a0a', border: '#7f1d1d',
-    desc: 'Long inactive with low spend and frequency. Requires strong incentive to re-activate.',
-    actions: ['Send aggressive discount', 'Remove from main list', 'Run re-engagement ad'] },
+const card = (extra = {}) => ({
+  background: '#fff', borderRadius: '16px',
+  padding: '24px', border: '1px solid #e8eaf6', ...extra
+});
+
+const SEG = {
+  Champions: { color: '#5b8df0', bg: '#eff4ff', border: '#c7d7fd', icon: '👑',
+    desc: 'Best customers — bought recently, buy often, spend the most.',
+    actions: ['Send loyalty rewards', 'Offer early access', 'Ask for referrals'] },
+  Loyal:     { color: '#22c55e', bg: '#f0fdf4', border: '#bbf7d0', icon: '💚',
+    desc: 'Regular buyers with solid frequency and spend. Great for upselling.',
+    actions: ['Upsell to premium', 'Enrol in membership', 'Send personalised offers'] },
+  'At-Risk': { color: '#f59e0b', bg: '#fffbeb', border: '#fde68a', icon: '⚠️',
+    desc: 'Were good customers but have not purchased recently.',
+    actions: ['Send win-back email', 'Offer time-limited discount', 'Ask for feedback'] },
+  Lost:      { color: '#ef4444', bg: '#fef2f2', border: '#fecaca', icon: '💔',
+    desc: 'Long inactive with low spend. Needs strong incentive.',
+    actions: ['Aggressive discount', 'Re-engagement ad', 'Remove from main list'] },
 };
 
 const presets = [
-  { label: 'High spender',   recency: 10,  frequency: 20, monetary: 5000 },
-  { label: 'Occasional',     recency: 90,  frequency: 3,  monetary: 200  },
-  { label: 'Lapsed customer',recency: 300, frequency: 2,  monetary: 80   },
-  { label: 'Lost customer',  recency: 500, frequency: 1,  monetary: 30   },
+  { label: 'High spender',    recency: 10,  frequency: 20, monetary: 5000 },
+  { label: 'Regular buyer',   recency: 45,  frequency: 8,  monetary: 800  },
+  { label: 'Lapsed customer', recency: 200, frequency: 3,  monetary: 200  },
+  { label: 'Lost customer',   recency: 400, frequency: 1,  monetary: 40   },
 ];
 
 export default function Predict() {
@@ -36,97 +41,79 @@ export default function Predict() {
     setLoading(true); setError(''); setResult(null);
     try {
       const res = await axios.post('http://localhost:8000/predict', {
-        recency:   parseInt(form.recency),
+        recency: parseInt(form.recency),
         frequency: parseInt(form.frequency),
-        monetary:  parseFloat(form.monetary),
+        monetary: parseFloat(form.monetary),
       });
       setResult(res.data);
     } catch {
-      setError('Backend error. Make sure FastAPI is running and you have uploaded data first.');
+      setError('Backend error. Make sure FastAPI is running on port 8000.');
     }
     setLoading(false);
   };
 
   const fields = [
-    { key: 'recency',   label: 'Recency',   unit: 'days since last order', placeholder: '30',  hint: 'Lower = more recent' },
-    { key: 'frequency', label: 'Frequency', unit: 'total orders placed',   placeholder: '5',   hint: 'Higher = more loyal' },
-    { key: 'monetary',  label: 'Monetary',  unit: 'total lifetime spend £', placeholder: '500', hint: 'Higher = more valuable' },
+    { key: 'recency',   label: 'Recency',   suffix: 'days',   placeholder: '30',  hint: 'Days since last order' },
+    { key: 'frequency', label: 'Frequency', suffix: 'orders', placeholder: '5',   hint: 'Total number of orders' },
+    { key: 'monetary',  label: 'Monetary',  suffix: '₹',      placeholder: '500', hint: 'Total lifetime spend' },
   ];
 
-  const info = result ? SEG_INFO[result.segment] : null;
+  const info = result ? SEG[result.segment] : null;
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '48px 32px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'start' }}>
 
-      <div style={{ marginBottom: '40px' }}>
-        <p style={{ margin: '0 0 6px', fontSize: '12px', color: '#6366f1', fontFamily: '"DM Mono", monospace', letterSpacing: '0.08em' }}>
-          SEGMENT PREDICTOR
-        </p>
-        <h1 style={{ margin: '0 0 10px', fontSize: '32px', fontWeight: '700', color: '#f9fafb', letterSpacing: '-0.5px' }}>
-          Predict customer segment
-        </h1>
-        <p style={{ margin: 0, color: '#9ca3af', fontSize: '15px' }}>
-          Enter RFM values for any customer to instantly classify them.
-        </p>
-      </div>
+      {/* Input panel */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-
-        {/* Input panel */}
-        <div>
-          {/* Quick presets */}
-          <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#6b7280', fontFamily: '"DM Mono", monospace' }}>
-            QUICK PRESETS
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '28px' }}>
+        {/* Presets */}
+        <div style={card()}>
+          <p style={{ fontWeight: '700', fontSize: '16px', color: '#1a1d3a', margin: '0 0 14px' }}>Quick Presets</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             {presets.map(p => (
               <button key={p.label} onClick={() => setForm({ recency: p.recency, frequency: p.frequency, monetary: p.monetary })}
                 style={{
-                  padding: '8px 12px', background: '#0f0f1a',
-                  border: '1px solid #1e1e2e', borderRadius: '8px',
-                  color: '#9ca3af', fontSize: '12px', cursor: 'pointer',
-                  textAlign: 'left', fontFamily: '"DM Sans", sans-serif',
-                  transition: 'border-color 0.15s',
+                  padding: '10px 14px', background: '#fafbff',
+                  border: '1px solid #e8eaf6', borderRadius: '10px',
+                  cursor: 'pointer', textAlign: 'left',
+                  fontFamily: '"Plus Jakarta Sans", sans-serif',
+                  transition: 'all 0.15s',
                 }}>
-                {p.label}
+                <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: '600', color: '#1a1d3a' }}>{p.label}</p>
+                <p style={{ margin: 0, fontSize: '11px', color: '#9fa8c7' }}>R:{p.recency} F:{p.frequency} M:₹{p.monetary}</p>
               </button>
             ))}
           </div>
+        </div>
 
-          {/* Fields */}
+        {/* RFM inputs */}
+        <div style={card()}>
+          <p style={{ fontWeight: '700', fontSize: '16px', color: '#1a1d3a', margin: '0 0 18px' }}>Enter RFM Values</p>
           {fields.map(f => (
-            <div key={f.key} style={{ marginBottom: '20px' }}>
+            <div key={f.key} style={{ marginBottom: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: '600', color: '#d1d5db' }}>
-                  {f.label}
-                </label>
-                <span style={{ fontSize: '11px', color: '#6b7280' }}>{f.hint}</span>
+                <label style={{ fontSize: '13px', fontWeight: '600', color: '#374151' }}>{f.label}</label>
+                <span style={{ fontSize: '11px', color: '#9fa8c7' }}>{f.hint}</span>
               </div>
               <div style={{ position: 'relative' }}>
                 <input
-                  type="number"
-                  placeholder={f.placeholder}
-                  value={form[f.key]}
+                  type="number" placeholder={f.placeholder} value={form[f.key]}
                   onChange={e => setForm({ ...form, [f.key]: e.target.value })}
                   style={{
-                    width: '100%', padding: '12px 14px',
-                    background: '#0f0f1a',
-                    border: '1px solid #1e1e2e',
-                    borderRadius: '10px',
-                    color: '#f3f4f6', fontSize: '16px',
-                    fontFamily: '"DM Mono", monospace',
+                    width: '100%', padding: '11px 52px 11px 14px',
+                    border: '1px solid #e8eaf6', borderRadius: '10px',
+                    fontSize: '14px', color: '#1a1d3a',
+                    fontFamily: '"Plus Jakarta Sans", sans-serif',
+                    background: '#fafbff', outline: 'none',
                     boxSizing: 'border-box',
-                    outline: 'none',
                   }}
                 />
                 <span style={{
                   position: 'absolute', right: '14px', top: '50%',
                   transform: 'translateY(-50%)',
-                  fontSize: '11px', color: '#4b5563',
-                  fontFamily: '"DM Mono", monospace',
-                  pointerEvents: 'none',
+                  fontSize: '11px', color: '#9fa8c7', fontWeight: '600',
                 }}>
-                  {f.unit}
+                  {f.suffix}
                 </span>
               </div>
             </div>
@@ -134,87 +121,90 @@ export default function Predict() {
 
           <button onClick={predict} disabled={loading} style={{
             width: '100%', padding: '13px',
-            background: loading ? '#1f2937' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-            color: loading ? '#6b7280' : 'white',
-            border: 'none', borderRadius: '10px',
-            fontSize: '15px', fontWeight: '600',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            fontFamily: '"DM Sans", sans-serif',
-            transition: 'opacity 0.2s',
+            background: loading ? '#e8eaf6' : 'linear-gradient(135deg, #5b8df0, #7c6fef)',
+            color: loading ? '#9fa8c7' : '#fff',
+            border: 'none', borderRadius: '12px',
+            fontSize: '14px', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer',
+            fontFamily: '"Plus Jakarta Sans", sans-serif',
           }}>
             {loading ? '⟳  Predicting...' : '→  Predict Segment'}
           </button>
 
           {error && (
             <div style={{
-              marginTop: '14px', padding: '12px 14px',
-              background: '#1f0a0a', border: '1px solid #7f1d1d',
-              borderRadius: '8px', color: '#fca5a5',
-              fontSize: '13px', fontFamily: '"DM Mono", monospace',
-            }}>
-              {error}
-            </div>
+              marginTop: '12px', padding: '11px 14px', borderRadius: '10px',
+              background: '#fef2f2', border: '1px solid #fecaca',
+              color: '#dc2626', fontSize: '13px',
+            }}>{error}</div>
           )}
         </div>
+      </div>
 
-        {/* Result panel */}
-        <div style={{
-          background: info ? info.bg : '#0f0f1a',
-          border: `1px solid ${info ? info.border : '#1e1e2e'}`,
-          borderRadius: '16px',
-          padding: '32px',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: result ? 'flex-start' : 'center',
-          alignItems: result ? 'flex-start' : 'center',
-          minHeight: '380px',
-          transition: 'all 0.3s',
-        }}>
-          {!result ? (
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.3 }}>🎯</div>
-              <p style={{ color: '#4b5563', fontSize: '14px', margin: 0 }}>
-                Fill in the form and click predict
-              </p>
-            </div>
-          ) : (
-            <>
-              <div style={{ fontSize: '40px', marginBottom: '12px' }}>{info.icon}</div>
-              <p style={{ margin: '0 0 4px', fontSize: '13px', color: info.color, fontWeight: '600', fontFamily: '"DM Mono", monospace' }}>
+      {/* Result panel */}
+      <div style={{
+        ...card(info ? { background: info.bg, border: `1px solid ${info.border}` } : {}),
+        minHeight: '440px',
+        display: 'flex', flexDirection: 'column',
+        justifyContent: result ? 'flex-start' : 'center',
+        alignItems: result ? 'stretch' : 'center',
+      }}>
+        {!result ? (
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              width: '64px', height: '64px', borderRadius: '20px',
+              background: '#eff4ff', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', margin: '0 auto 16px', fontSize: '28px',
+            }}>🎯</div>
+            <p style={{ color: '#1a1d3a', fontWeight: '600', fontSize: '15px', margin: '0 0 6px' }}>Ready to predict</p>
+            <p style={{ color: '#9fa8c7', fontSize: '13px', margin: 0 }}>Fill in the form on the left</p>
+          </div>
+        ) : (
+          <>
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{
+                width: '64px', height: '64px', borderRadius: '20px',
+                background: '#fff', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', margin: '0 auto 14px', fontSize: '28px',
+                border: `1px solid ${info.border}`,
+              }}>{info.icon}</div>
+              <p style={{ margin: '0 0 4px', fontSize: '12px', color: info.color, fontWeight: '700', letterSpacing: '0.06em' }}>
                 PREDICTED SEGMENT
               </p>
-              <p style={{ margin: '0 0 16px', fontSize: '36px', fontWeight: '800', color: '#f9fafb', letterSpacing: '-1px' }}>
+              <p style={{ margin: '0 0 10px', fontSize: '32px', fontWeight: '800', color: '#1a1d3a', letterSpacing: '-0.5px' }}>
                 {result.segment}
               </p>
-              <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#9ca3af', lineHeight: 1.6 }}>
+              <p style={{ margin: 0, fontSize: '13px', color: '#6b7280', lineHeight: 1.5, maxWidth: '280px', marginLeft: 'auto', marginRight: 'auto' }}>
                 {info.desc}
               </p>
+            </div>
 
-              <div style={{ width: '100%', borderTop: `1px solid ${info.border}`, paddingTop: '20px' }}>
-                <p style={{ margin: '0 0 12px', fontSize: '12px', color: info.color, fontFamily: '"DM Mono", monospace', letterSpacing: '0.05em' }}>
-                  RECOMMENDED ACTIONS
-                </p>
-                {info.actions.map((a, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '8px' }}>
-                    <span style={{ color: info.color, fontSize: '14px', marginTop: '1px' }}>›</span>
-                    <span style={{ fontSize: '13px', color: '#d1d5db' }}>{a}</span>
+            <div style={{ background: 'rgba(255,255,255,0.6)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+              <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: '700', color: info.color, letterSpacing: '0.06em' }}>
+                RECOMMENDED ACTIONS
+              </p>
+              {info.actions.map((a, i) => (
+                <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '8px' }}>
+                  <div style={{ width: '20px', height: '20px', borderRadius: '6px', background: info.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <span style={{ fontSize: '10px', color: info.color, fontWeight: '700' }}>{i+1}</span>
+                  </div>
+                  <span style={{ fontSize: '13px', color: '#374151' }}>{a}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ background: 'rgba(255,255,255,0.5)', borderRadius: '10px', padding: '12px 14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '8px', textAlign: 'center' }}>
+                {[['Recency', form.recency, 'days'], ['Frequency', form.frequency, 'orders'], ['Monetary', form.monetary, '₹']].map(([l,v,u]) => (
+                  <div key={l}>
+                    <p style={{ margin: '0 0 2px', fontSize: '10px', color: '#9fa8c7', fontWeight: '600' }}>{l}</p>
+                    <p style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#1a1d3a' }}>{v}</p>
+                    <p style={{ margin: 0, fontSize: '10px', color: '#9fa8c7' }}>{u}</p>
                   </div>
                 ))}
               </div>
-
-              <div style={{
-                marginTop: '20px', width: '100%',
-                padding: '10px 14px',
-                background: 'rgba(0,0,0,0.3)',
-                borderRadius: '8px',
-                fontFamily: '"DM Mono", monospace',
-                fontSize: '11px', color: '#6b7280',
-              }}>
-                R={form.recency}d · F={form.frequency} orders · M=£{form.monetary}
-              </div>
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
