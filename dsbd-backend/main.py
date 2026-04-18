@@ -9,6 +9,11 @@ from sklearn.cluster import KMeans
 from sklearn.tree import DecisionTreeClassifier
 import joblib, io, os, warnings
 warnings.filterwarnings('ignore')
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 
 app = FastAPI(title="Customer Segmentation API")
 
@@ -167,8 +172,13 @@ async def upload(file: UploadFile = File(...)):
         "summary":           rfm['Segment'].value_counts().to_dict(),
         "cluster_profiles":  cluster_profiles,
         "sample_customers":  sample_customers,
-        "all_customers":     rfm[['Customer ID','Recency','Frequency','Monetary','Cluster','Segment']].rename(columns={'Customer ID':'customer_id','Recency':'recency','Frequency':'frequency','Monetary':'monetary','Segment':'segment'}).round(2).to_dict(orient='records'),
-        "classifier_accuracy": classifier_accuracy,   # ← NEW
+        "all_customers": rfm.rename(columns={
+    cid: 'customer_id',
+    'Recency': 'recency',
+    'Frequency': 'frequency',
+    'Monetary': 'monetary',
+    'Segment': 'segment'
+})[['customer_id','recency','frequency','monetary','segment']].round(2).to_dict(orient='records'),
         "monthly_revenue":   monthly_rev,             # ← NEW (see below)
         "top_countries":     top_countries,            # ← NEW (see below)
         "pca_points":        rfm_pca.tolist(),
