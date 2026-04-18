@@ -121,51 +121,52 @@ export default function Dashboard() {
         </div>
 
         <div style={card()}>
-          <p style={{fontWeight:'700',fontSize:'15px',color:'#1a1d3a',margin:'0 0 14px'}}>Customer Satisfaction</p>
-          <ResponsiveContainer width="100%" height={140}>
-            <AreaChart data={visitorData.map((d,i)=>({name:d.m,last:200+i*14,curr:185+i*22}))}>
-              <defs>
-                <linearGradient id="ag1" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#5b8df0" stopOpacity={0.15}/><stop offset="95%" stopColor="#5b8df0" stopOpacity={0}/></linearGradient>
-                <linearGradient id="ag2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#22c55e" stopOpacity={0.15}/><stop offset="95%" stopColor="#22c55e" stopOpacity={0}/></linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f2ff" vertical={false}/>
-              <XAxis dataKey="name" tick={{fill:'#9fa8c7',fontSize:10}} axisLine={false} tickLine={false}/>
-              <Tooltip contentStyle={{borderRadius:'10px',border:'1px solid #e8eaf6',fontSize:'12px'}}/>
-              <Area type="monotone" dataKey="last" stroke="#5b8df0" fill="url(#ag1)" strokeWidth={2} dot={false}/>
-              <Area type="monotone" dataKey="curr" stroke="#22c55e" fill="url(#ag2)" strokeWidth={2} dot={{fill:'#22c55e',r:3}}/>
-            </AreaChart>
-          </ResponsiveContainer>
-          <div style={{display:'flex',justifyContent:'space-around',marginTop:'10px'}}>
-            {[['#5b8df0','Last Month','₹3,00,00'],['#22c55e','This Month','₹4,50,00']].map(([c,l,v])=>(
-              <div key={l} style={{display:'flex',alignItems:'center',gap:'6px'}}>
-                <div style={{width:'8px',height:'8px',borderRadius:'50%',background:c}}/>
-                <div><p style={{margin:0,fontSize:'10px',color:'#9fa8c7'}}>{l}</p><p style={{margin:0,fontSize:'12px',fontWeight:'700',color:'#1a1d3a'}}>{v}</p></div>
-              </div>
-            ))}
+          <p style={{ fontWeight:'700', fontSize:'15px', color:'#1a1d3a', margin:'0 0 14px' }}>Top Countries by Revenue</p>
+          <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+            {(data.top_countries || []).slice(0,5).map((c, i) => {
+              const max = (data.top_countries[0]?.revenue) || 1;
+              const pct = Math.round((c.revenue / max) * 100);
+              return (
+                <div key={c.country}>
+                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'4px' }}>
+                    <span style={{ fontSize:'13px', fontWeight:'600', color:'#1a1d3a' }}>{c.country}</span>
+                    <span style={{ fontSize:'12px', color:'#9fa8c7' }}>£{Math.round(c.revenue).toLocaleString()}</span>
+                  </div>
+                  <div style={{ height:'7px', background:'#f0f2ff', borderRadius:'10px' }}>
+                    <div style={{ width:`${pct}%`, height:'100%', borderRadius:'10px',
+                      background: ['#5b8df0','#22c55e','#f59e0b','#ef4444','#8b5cf6'][i]
+                    }}/>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
         <div style={card()}>
-          <p style={{fontWeight:'700',fontSize:'15px',color:'#1a1d3a',margin:'0 0 14px'}}>Target vs Reality</p>
-          <ResponsiveContainer width="100%" height={140}>
-            <BarChart data={rfmBar} barGap={3}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f2ff" vertical={false}/>
-              <XAxis dataKey="name" tick={{fill:'#9fa8c7',fontSize:10}} axisLine={false} tickLine={false}/>
-              <Tooltip contentStyle={{borderRadius:'10px',border:'1px solid #e8eaf6',fontSize:'12px'}}/>
-              <Bar dataKey="reality" fill="#22c55e" radius={[4,4,0,0]} name="Reality Sales"/>
-              <Bar dataKey="target"  fill="#5b8df0" radius={[4,4,0,0]} name="Target Sales"/>
-            </BarChart>
-          </ResponsiveContainer>
-          <div style={{marginTop:'10px',display:'flex',flexDirection:'column',gap:'7px'}}>
-            {[['#22c55e','Reality Sales','Global',data.summary['Champions']||0],['#5b8df0','Target Sales','Commercial',total]].map(([c,l,sub,v])=>(
-              <div key={l} style={{display:'flex',alignItems:'center',gap:'8px'}}>
-                <div style={{width:'24px',height:'24px',borderRadius:'7px',background:c+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                  <div style={{width:'7px',height:'7px',borderRadius:'2px',background:c}}/>
+          <p style={{ fontWeight:'700', fontSize:'15px', color:'#1a1d3a', margin:'0 0 14px' }}>Segment Revenue Share</p>
+          <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+            {(data.cluster_profiles || []).map((p, i) => {
+              const rev = Math.round((data.summary?.[p.segment] || 0) * p.monetary);
+              const totalRev = (data.cluster_profiles || []).reduce((s, x) =>
+                s + (data.summary?.[x.segment] || 0) * x.monetary, 0) || 1;
+              const pct = Math.round((rev / totalRev) * 100);
+              return (
+                <div key={p.segment}>
+                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'4px' }}>
+                    <span style={{ fontSize:'13px', fontWeight:'600', color:'#1a1d3a' }}>{p.segment}</span>
+                    <span style={{ fontSize:'12px', color:['#5b8df0','#22c55e','#f59e0b','#ef4444'][i], fontWeight:'700' }}>
+                      {pct}% · £{rev.toLocaleString()}
+                    </span>
+                  </div>
+                  <div style={{ height:'7px', background:'#f0f2ff', borderRadius:'10px' }}>
+                    <div style={{ width:`${pct}%`, height:'100%', borderRadius:'10px',
+                      background:['#5b8df0','#22c55e','#f59e0b','#ef4444'][i]
+                    }}/>
+                  </div>
                 </div>
-                <div style={{flex:1}}><p style={{margin:0,fontSize:'11px',fontWeight:'600',color:'#1a1d3a'}}>{l}</p><p style={{margin:0,fontSize:'10px',color:'#9fa8c7'}}>{sub}</p></div>
-                <span style={{fontSize:'12px',fontWeight:'700',color:'#1a1d3a'}}>{v.toLocaleString()}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
