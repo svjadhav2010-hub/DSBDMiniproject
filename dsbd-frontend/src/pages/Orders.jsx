@@ -12,7 +12,7 @@ export default function Orders() {
 
   useEffect(() => { const s = localStorage.getItem('segmentData'); if(s) setData(JSON.parse(s)); }, []);
 
-  const customers = data?.sample_customers || [];
+  const customers = data?.all_customers || data?.sample_customers || [];
   const filtered  = customers.filter(c => {
     const matchSeg = filter === 'All' || c.segment === filter;
     const matchSearch = String(c.customer_id).includes(search);

@@ -29,7 +29,8 @@ const NAV = [
 
 const TITLES = {
   '/dashboard':'/dashboard','/':' Upload Data','/ predict':' Predict',
-  '/analytics':'Analytics','/orders':'Orders','/messages':'Messages','/settings':'Settings',
+  '/analytics':'Analytics','/orders':'Orders','/messages':'Messages',
+  '/settings':'Settings','/actions':   'Action Centre', 
 };
 
 const UNREAD_COUNT = 3;
@@ -153,7 +154,6 @@ function Topbar({ showNotif, setShowNotif }) {
 
 function AppShell() {
   const [showNotif, setShowNotif] = useState(false);
-  <Route path="/actions" element={<ActionCentre />} />
   return (
     <div style={{ display:'flex' }}>
       <Sidebar />
@@ -168,6 +168,7 @@ function AppShell() {
             <Route path="/orders"     element={<Orders />} />
             <Route path="/messages"   element={<Messages />} />
             <Route path="/settings"   element={<Settings />} />
+            <Route path="/actions" element={<ActionCentre />} />
           </Routes>
         </div>
       </div>

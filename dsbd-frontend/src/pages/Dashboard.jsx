@@ -72,26 +72,28 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Real: Monthly Revenue Trend */}
         <div style={card()}>
-          <p style={{fontWeight:'700',fontSize:'15px',color:'#1a1d3a',margin:'0 0 14px'}}>Visitor Insights</p>
+          <p style={{ fontWeight:'700', fontSize:'15px', color:'#1a1d3a', margin:'0 0 4px' }}>Monthly Revenue Trend</p>
+          <p style={{ fontSize:'12px', color:'#9fa8c7', margin:'0 0 14px' }}>Actual revenue from your transaction data</p>
           <ResponsiveContainer width="100%" height={155}>
-            <LineChart data={visitorData}>
+            <AreaChart data={data.monthly_revenue || []}>
+              <defs>
+                <linearGradient id="mg1" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor="#5b8df0" stopOpacity={0.2}/>
+                  <stop offset="95%" stopColor="#5b8df0" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f2ff" vertical={false}/>
-              <XAxis dataKey="m" tick={{fill:'#9fa8c7',fontSize:10}} axisLine={false} tickLine={false}/>
-              <YAxis tick={{fill:'#9fa8c7',fontSize:10}} axisLine={false} tickLine={false}/>
-              <Tooltip contentStyle={{borderRadius:'10px',border:'1px solid #e8eaf6',fontSize:'12px'}}/>
-              <Line type="monotone" dataKey="loyal"  stroke="#5b8df0" strokeWidth={2.5} dot={false}/>
-              <Line type="monotone" dataKey="new"    stroke="#ef4444" strokeWidth={2.5} dot={{fill:'#ef4444',r:3}}/>
-              <Line type="monotone" dataKey="unique" stroke="#f59e0b" strokeWidth={2.5} dot={false}/>
-            </LineChart>
+              <XAxis dataKey="month" tick={{fill:'#9fa8c7',fontSize:9}} axisLine={false} tickLine={false}
+                tickFormatter={v => v?.slice(5) || v}/>
+              <YAxis tick={{fill:'#9fa8c7',fontSize:10}} axisLine={false} tickLine={false}
+                tickFormatter={v => `£${(v/1000).toFixed(0)}k`}/>
+              <Tooltip formatter={v => [`£${Number(v).toLocaleString()}`, 'Revenue']}
+                contentStyle={{borderRadius:'10px',border:'1px solid #e8eaf6',fontSize:'12px'}}/>
+              <Area type="monotone" dataKey="revenue" stroke="#5b8df0" fill="url(#mg1)" strokeWidth={2.5} dot={false}/>
+            </AreaChart>
           </ResponsiveContainer>
-          <div style={{display:'flex',gap:'14px',marginTop:'8px'}}>
-            {[['#5b8df0','Loyal Customers'],['#ef4444','New Customers'],['#f59e0b','Unique Customers']].map(([c,l])=>(
-              <div key={l} style={{display:'flex',alignItems:'center',gap:'5px'}}>
-                <div style={{width:'8px',height:'8px',borderRadius:'2px',background:c}}/><span style={{fontSize:'10px',color:'#9fa8c7'}}>{l}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 

@@ -93,6 +93,25 @@ async def upload(file: UploadFile = File(...)):
     clf = DecisionTreeClassifier(random_state=42)
     clf.fit(rfm_scaled, rfm['Cluster'])
 
+    # After training all classifiers, compute accuracy
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import accuracy_score
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        rfm_scaled, rfm['Cluster'], test_size=0.2, random_state=42)
+
+    classifiers = {
+        'Logistic Regression': LogisticRegression(max_iter=1000, random_state=42),
+        'KNN':                 KNeighborsClassifier(n_neighbors=5),
+        'Decision Tree':       DecisionTreeClassifier(random_state=42),
+        'SVM':                 SVC(kernel='rbf', random_state=42)
+    }
+    classifier_accuracy = {}
+    for name, clf in classifiers.items():
+        clf.fit(X_train, y_train)
+        y_pred = clf.predict(X_test)
+        classifier_accuracy[name] = round(accuracy_score(y_test, y_pred) * 100, 1)
+
     # Save to memory
     MODEL['scaler']  = scaler
     MODEL['kmeans']  = km
@@ -124,12 +143,35 @@ async def upload(file: UploadFile = File(...)):
             'segment':     row['Segment']
         })
 
+    # Monthly revenue trend from real InvoiceDate
+    df['Month'] = df[dt].dt.to_period('M').astype(str)
+    monthly = df.groupby('Month')['TotalAmount'].sum().tail(12).reset_index()
+    monthly_rev = [{'month': r['Month'], 'revenue': round(r['TotalAmount'], 2)} for _, r in monthly.iterrows()]
+
+    # Top countries by revenue
+    top_countries = df.groupby('Country')['TotalAmount'].sum().sort_values(ascending=False).head(8).reset_index()
+    top_countries = [{'country': r['Country'], 'revenue': round(r['TotalAmount'], 2)} for _, r in top_countries.iterrows()]
+
+    '''
     return {
         "total_customers":  len(rfm),
         "summary":          rfm['Segment'].value_counts().to_dict(),
         "cluster_profiles": cluster_profiles,
         "sample_customers": sample_customers,
         "pca_points":       rfm_pca.tolist()
+    }
+    '''
+
+    return {
+        "total_customers":   len(rfm),
+        "summary":           rfm['Segment'].value_counts().to_dict(),
+        "cluster_profiles":  cluster_profiles,
+        "sample_customers":  sample_customers,
+        "all_customers":     rfm[['Customer ID','Recency','Frequency','Monetary','Cluster','Segment']].rename(columns={'Customer ID':'customer_id','Recency':'recency','Frequency':'frequency','Monetary':'monetary','Segment':'segment'}).round(2).to_dict(orient='records'),
+        "classifier_accuracy": classifier_accuracy,   # ← NEW
+        "monthly_revenue":   monthly_rev,             # ← NEW (see below)
+        "top_countries":     top_countries,            # ← NEW (see below)
+        "pca_points":        rfm_pca.tolist(),
     }
 
 

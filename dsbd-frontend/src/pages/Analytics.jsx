@@ -241,10 +241,10 @@ export default function Analytics() {
   ];
 
   const accuracy = [
-    { name: 'Logistic Reg',   acc: 82, color: '#5b8df0' },
-    { name: 'KNN',            acc: 88, color: '#22c55e' },
-    { name: 'Decision Tree',  acc: 94, color: '#f59e0b' },
-    { name: 'SVM',            acc: 91, color: '#8b5cf6' },
+    { name: 'Logistic Regression', acc: data?.classifier_accuracy?.['Logistic Regression'] || 82, color: '#5b8df0' },
+    { name: 'KNN',                 acc: data?.classifier_accuracy?.['KNN']                 || 88, color: '#22c55e' },
+    { name: 'Decision Tree',       acc: data?.classifier_accuracy?.['Decision Tree']        || 94, color: '#f59e0b' },
+    { name: 'SVM',                 acc: data?.classifier_accuracy?.['SVM']                 || 91, color: '#8b5cf6' },
   ];
 
   const scatter = profiles.map((p, i) => ({
