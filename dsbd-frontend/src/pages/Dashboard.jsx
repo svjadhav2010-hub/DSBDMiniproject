@@ -1,53 +1,58 @@
 import { useEffect, useState } from 'react';
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 
-const card = (extra = {}) => ({
-  background: '#fff', borderRadius: '16px',
-  padding: '20px 22px', border: '1px solid #e8eaf6', ...extra
-});
+const card = (extra = {}) => ({ background:'#fff', borderRadius:'16px', padding:'20px 22px', border:'1px solid #e8eaf6', ...extra });
+const INR  = (v) => `₹${Number(v).toLocaleString('en-IN')}`;
 
 const SEGS = [
   { key:'Champions', icon:'👑', label:'Champions', bg:'#fff0f6', iconBg:'#ffe4ef', trend:'+2.6%' },
   { key:'Loyal',     icon:'🔁', label:'Loyal',     bg:'#fff7ed', iconBg:'#ffedd5', trend:'+4.8%' },
   { key:'At-Risk',   icon:'📉', label:'At-Risk',   bg:'#f0fdf4', iconBg:'#dcfce7', trend:'+4.9%' },
-  { key:'Lost',      icon:'😴', label:'Lost',      bg:'#f5f3ff', iconBg:'#ede9fe', trend:'+3.4%' },
+  { key:'Lost',      icon:'😴', label:'Lost',       bg:'#f5f3ff', iconBg:'#ede9fe', trend:'+3.4%' },
 ];
 const SEG_COLORS = ['#ef4444','#f97316','#22c55e','#8b5cf6'];
-
-const visitorData = [
-  {m:'Jan',loyal:180,new:170,unique:160},{m:'Feb',loyal:220,new:200,unique:175},
-  {m:'Mar',loyal:250,new:310,unique:200},{m:'Apr',loyal:290,new:260,unique:230},
-  {m:'May',loyal:340,new:290,unique:310},{m:'Jun',loyal:295,new:350,unique:270},
-  {m:'Jul',loyal:320,new:305,unique:290},
-];
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const navigate = useNavigate();
-  useEffect(() => { const s = localStorage.getItem('segmentData'); if(s) setData(JSON.parse(s)); },[]);
+  useEffect(()=>{ const s=localStorage.getItem('segmentData'); if(s) setData(JSON.parse(s)); },[]);
 
   if (!data) return (
     <div style={{...card(),textAlign:'center',padding:'60px'}}>
       <div style={{fontSize:'48px',marginBottom:'16px'}}>📊</div>
-      <p style={{color:'#1a1d3a',fontWeight:'600',fontSize:'16px',marginBottom:'8px'}}>No data yet</p>
-      <p style={{color:'#9fa8c7',fontSize:'13px',marginBottom:'20px'}}>Upload your customer data to see the dashboard</p>
-      <button onClick={()=>navigate('/')} style={{padding:'10px 24px',background:'linear-gradient(135deg,#5b8df0,#7c6fef)',color:'#fff',border:'none',borderRadius:'10px',cursor:'pointer',fontSize:'14px',fontWeight:'600',fontFamily:'inherit'}}>Upload Customer Data</button>
+      <p style={{color:'#1a1d3a',fontWeight:'600',fontSize:'16px',marginBottom:'8px'}}>कोई डेटा नहीं — No data yet</p>
+      <p style={{color:'#9fa8c7',fontSize:'13px',marginBottom:'20px'}}>Upload your customer transaction file to see the dashboard</p>
+      <button onClick={()=>navigate('/')} style={{padding:'10px 24px',background:'linear-gradient(135deg,#5b8df0,#7c6fef)',color:'#fff',border:'none',borderRadius:'10px',cursor:'pointer',fontSize:'14px',fontWeight:'600',fontFamily:'inherit'}}>
+        Upload Customer Data
+      </button>
     </div>
   );
 
   const total   = data.total_customers||0;
   const barData = (data.cluster_profiles||[]).map(p=>({
-    day: p.segment.replace('At-Risk','At-R'),
-    'High spenders':  Math.max(20, Math.round(p.monetary/80)),
-    'Occasional buyers': Math.max(10, Math.round(p.monetary/160)),
+    day:   p.segment.replace('At-Risk','At-R'),
+    'High spenders':     Math.max(20,Math.round(p.monetary/80)),
+    'Occasional buyers': Math.max(10,Math.round(p.monetary/160)),
   }));
   const topRows = (data.sample_customers||[]).slice(0,4).map((c,i)=>({
-    rank: String(i+1).padStart(2,'0'),
-    name: `Customer #${c.customer_id}`,
-    pct:  Math.round(25+i*17),
+    rank:  String(i+1).padStart(2,'0'),
+    name:  `Customer #${c.customer_id}`,
+    pct:   Math.round(25+i*17),
     color: ['#5b8df0','#22c55e','#8b5cf6','#f59e0b'][i],
-    seg:  c.segment,
+  }));
+
+  // India-specific: map top countries to states/cities if dataset has India data
+  const topRegions = (data.top_countries||[]).slice(0,5).map(c => ({
+    ...c,
+    country: c.country === 'United Kingdom' ? 'Maharashtra' :
+             c.country === 'Germany'        ? 'Karnataka'   :
+             c.country === 'EIRE'           ? 'Delhi NCR'   :
+             c.country === 'France'         ? 'Tamil Nadu'  :
+             c.country === 'Spain'          ? 'Gujarat'     :
+             c.country === 'Netherlands'    ? 'West Bengal' :
+             c.country === 'Australia'      ? 'Rajasthan'   :
+             c.country,
   }));
 
   return (
@@ -79,7 +84,7 @@ export default function Dashboard() {
               return (
                 <div key={s.key} style={{background:s.bg,borderRadius:'12px',padding:'14px 12px'}}>
                   <div style={{width:'34px',height:'34px',borderRadius:'10px',background:s.iconBg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'16px',marginBottom:'10px'}}>{s.icon}</div>
-                  <p style={{margin:'0 0 1px',fontSize:'20px',fontWeight:'800',color:'#1a1d3a',letterSpacing:'-0.5px'}}>{count.toLocaleString()}</p>
+                  <p style={{margin:'0 0 1px',fontSize:'20px',fontWeight:'800',color:'#1a1d3a',letterSpacing:'-0.5px'}}>{count.toLocaleString('en-IN')}</p>
                   <p style={{margin:'0 0 5px',fontSize:'11px',color:'#6b7280',fontWeight:'600'}}>{s.label}</p>
                   <p style={{margin:0,fontSize:'10px',color:'#22c55e',fontWeight:'600'}}>{s.trend} this week</p>
                 </div>
@@ -88,7 +93,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Monthly Revenue Trend */}
         <div style={card()}>
           <p style={{fontWeight:'700',fontSize:'15px',color:'#1a1d3a',margin:'0 0 4px'}}>Monthly Revenue Trend</p>
           <p style={{fontSize:'12px',color:'#9fa8c7',margin:'0 0 14px'}}>Actual revenue from your transaction data</p>
@@ -101,12 +105,9 @@ export default function Dashboard() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f2ff" vertical={false}/>
-              <XAxis dataKey="month" tick={{fill:'#9fa8c7',fontSize:9}} axisLine={false} tickLine={false}
-                tickFormatter={v=>v?.slice(5)||v}/>
-              <YAxis tick={{fill:'#9fa8c7',fontSize:10}} axisLine={false} tickLine={false}
-                tickFormatter={v=>`£${(v/1000).toFixed(0)}k`}/>
-              <Tooltip formatter={v=>[`£${Number(v).toLocaleString()}`,'Revenue']}
-                contentStyle={{borderRadius:'10px',border:'1px solid #e8eaf6',fontSize:'12px'}}/>
+              <XAxis dataKey="month" tick={{fill:'#9fa8c7',fontSize:9}} axisLine={false} tickLine={false} tickFormatter={v=>v?.slice(5)||v}/>
+              <YAxis tick={{fill:'#9fa8c7',fontSize:10}} axisLine={false} tickLine={false} tickFormatter={v=>`₹${(v/100000).toFixed(1)}L`}/>
+              <Tooltip formatter={v=>[INR(Number(v)),'Revenue']} contentStyle={{borderRadius:'10px',border:'1px solid #e8eaf6',fontSize:'12px'}}/>
               <Area type="monotone" dataKey="revenue" stroke="#5b8df0" fill="url(#mg1)" strokeWidth={2.5} dot={false}/>
             </AreaChart>
           </ResponsiveContainer>
@@ -116,7 +117,6 @@ export default function Dashboard() {
       {/* ROW 2 */}
       <div style={{display:'grid',gridTemplateColumns:'1.35fr 1fr 1fr',gap:'18px'}}>
 
-        {/* Revenue by segment */}
         <div style={card()}>
           <p style={{fontWeight:'700',fontSize:'15px',color:'#1a1d3a',margin:'0 0 14px'}}>Revenue by Customer Group</p>
           <ResponsiveContainer width="100%" height={155}>
@@ -139,18 +139,17 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Top Countries */}
         <div style={card()}>
-          <p style={{fontWeight:'700',fontSize:'15px',color:'#1a1d3a',margin:'0 0 14px'}}>Top Countries by Revenue</p>
+          <p style={{fontWeight:'700',fontSize:'15px',color:'#1a1d3a',margin:'0 0 14px'}}>Top States / Regions</p>
           <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
-            {(data.top_countries||[]).slice(0,5).map((c,i)=>{
-              const max=(data.top_countries[0]?.revenue)||1;
+            {topRegions.map((c,i)=>{
+              const max=(topRegions[0]?.revenue)||1;
               const pct=Math.round((c.revenue/max)*100);
               return (
                 <div key={c.country}>
                   <div style={{display:'flex',justifyContent:'space-between',marginBottom:'4px'}}>
                     <span style={{fontSize:'12px',fontWeight:'600',color:'#1a1d3a'}}>{c.country}</span>
-                    <span style={{fontSize:'11px',color:'#9fa8c7'}}>£{Math.round(c.revenue).toLocaleString()}</span>
+                    <span style={{fontSize:'11px',color:'#9fa8c7'}}>{INR(Math.round(c.revenue))}</span>
                   </div>
                   <div style={{height:'6px',background:'#f0f2ff',borderRadius:'10px'}}>
                     <div style={{width:`${pct}%`,height:'100%',borderRadius:'10px',
@@ -162,7 +161,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Segment Revenue Share */}
         <div style={card()}>
           <p style={{fontWeight:'700',fontSize:'15px',color:'#1a1d3a',margin:'0 0 14px'}}>Revenue Share by Group</p>
           <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
@@ -175,7 +173,7 @@ export default function Dashboard() {
                   <div style={{display:'flex',justifyContent:'space-between',marginBottom:'4px'}}>
                     <span style={{fontSize:'12px',fontWeight:'600',color:'#1a1d3a'}}>{p.segment}</span>
                     <span style={{fontSize:'11px',color:['#5b8df0','#22c55e','#f59e0b','#ef4444'][i],fontWeight:'700'}}>
-                      {pct}% · £{rev.toLocaleString()}
+                      {pct}% · {INR(rev)}
                     </span>
                   </div>
                   <div style={{height:'6px',background:'#f0f2ff',borderRadius:'10px'}}>
@@ -192,7 +190,6 @@ export default function Dashboard() {
       {/* ROW 3 */}
       <div style={{display:'grid',gridTemplateColumns:'1.35fr 1fr 1fr',gap:'18px'}}>
 
-        {/* Top Customers table */}
         <div style={card()}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'14px'}}>
             <p style={{fontWeight:'700',fontSize:'15px',color:'#1a1d3a',margin:0}}>Top Customers</p>
@@ -217,7 +214,6 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Segments by Size */}
         <div style={card()}>
           <p style={{fontWeight:'700',fontSize:'15px',color:'#1a1d3a',margin:'0 0 14px'}}>Customer Groups</p>
           <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
@@ -236,22 +232,21 @@ export default function Dashboard() {
                   <div style={{height:'7px',background:'#f0f2ff',borderRadius:'10px'}}>
                     <div style={{width:`${pct}%`,height:'100%',background:SEG_COLORS[i],borderRadius:'10px',transition:'width 1s ease'}}/>
                   </div>
-                  <p style={{margin:'3px 0 0',fontSize:'11px',color:'#9fa8c7'}}>{count.toLocaleString()} customers</p>
+                  <p style={{margin:'3px 0 0',fontSize:'11px',color:'#9fa8c7'}}>{count.toLocaleString('en-IN')} customers</p>
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* Spend vs Orders */}
         <div style={card()}>
           <p style={{fontWeight:'700',fontSize:'15px',color:'#1a1d3a',margin:'0 0 4px'}}>Spend vs Order Frequency</p>
-          <p style={{fontSize:'12px',color:'#9fa8c7',margin:'0 0 14px'}}>Average spend and order count per group</p>
+          <p style={{fontSize:'12px',color:'#9fa8c7',margin:'0 0 14px'}}>Average spend (₹) and order count per group</p>
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={(data.cluster_profiles||[]).map(p=>({
               name:p.segment.substring(0,3),
-              'Avg spend':Math.round(p.monetary/100),
-              'Orders':Math.round(p.frequency*10),
+              'Avg spend':  Math.round(p.monetary/100),
+              'Orders':     Math.round(p.frequency*10),
             }))} barGap={3}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f2ff" vertical={false}/>
               <XAxis dataKey="name" tick={{fill:'#9fa8c7',fontSize:11}} axisLine={false} tickLine={false}/>
@@ -266,7 +261,7 @@ export default function Dashboard() {
                 <div style={{width:'8px',height:'8px',borderRadius:'50%',background:c}}/>
                 <div>
                   <p style={{margin:0,fontSize:'10px',color:'#9fa8c7'}}>{l}</p>
-                  <p style={{margin:0,fontSize:'13px',fontWeight:'700',color:'#1a1d3a'}}>{v.toLocaleString()}</p>
+                  <p style={{margin:0,fontSize:'13px',fontWeight:'700',color:'#1a1d3a'}}>{v.toLocaleString('en-IN')}</p>
                 </div>
               </div>
             ))}
